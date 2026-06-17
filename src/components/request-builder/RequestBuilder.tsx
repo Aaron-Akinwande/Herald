@@ -8,6 +8,7 @@ import MethodSelector from "./MethodSelector";
 import UrlInput from "./UrlInput";
 import SendButton from "./SendButton";
 import HeadersTable from "./HeadersTable";
+import BodyEditor from "./BodyEditor";
 
 interface TabPanelProps {
   children: React.ReactNode;
@@ -63,7 +64,7 @@ export default function RequestBuilder() {
       </TabPanel>
 
       <TabPanel value={tab} index={1}>
-        <Box
+        {/* <Box
           sx={{
             fontFamily: "monospace",
             fontSize: 12,
@@ -72,7 +73,8 @@ export default function RequestBuilder() {
           }}
         >
           JSON body editor coming soon — Phase 1 step 6
-        </Box>
+        </Box> */}
+        <BodyEditor />
       </TabPanel>
     </Paper>
   );

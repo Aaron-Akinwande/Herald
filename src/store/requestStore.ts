@@ -115,6 +115,21 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
 
     const t0 = Date.now();
 
+    if (method !== "GET" && method !== "DELETE" && body.trim()) {
+      try {
+        JSON.parse(body);
+      } catch {
+        set({
+          isLoading: false,
+          error: {
+            message:
+              "Request body contains invalid JSON — fix it before sending.",
+          },
+        });
+        return;
+      }
+    }
+
     try {
       const res = await axios({
         method,
