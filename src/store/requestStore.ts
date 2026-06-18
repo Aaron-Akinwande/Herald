@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import axios, { AxiosError } from "axios";
+import { useHistoryStore } from "./historyStore";
+import { useEnvStore } from "./envStore";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -50,6 +52,7 @@ interface RequestStore {
   removeHeader: (id: string) => void;
   sendRequest: () => Promise<void>;
   clearResponse: () => void;
+  restoreHeaders: (headers: Header[]) => void;
 }
 
 const buildHeaders = (headers: Header[]) =>
@@ -75,6 +78,7 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
   setUrl: (url) => set({ url, response: null, error: null }),
   setBody: (body) => set({ body }),
   clearResponse: () => set({ response: null, error: null }),
+  restoreHeaders: (headers) => set({ headers }),
 
   addHeader: () =>
     set((state) => ({
@@ -98,11 +102,12 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
 
   sendRequest: async () => {
     const { method, url, headers, body } = get();
+const resolvedUrl = useEnvStore.getState().resolveUrl(url);
 
     if (!url.trim()) return;
 
     try {
-      new URL(url);
+      new URL(resolvedUrl);
     } catch {
       set({
         error: { message: "Invalid URL — make sure it starts with https://" },
@@ -133,7 +138,7 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
     try {
       const res = await axios({
         method,
-        url,
+        url: resolvedUrl,
         headers: buildHeaders(headers),
         data:
           method !== "GET" && method !== "DELETE" && body
@@ -152,6 +157,16 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
           time: Date.now() - t0,
           size: calcSize(res.data),
         },
+      });
+
+      useHistoryStore.getState().addEntry({
+        method,
+        url,
+        headers,
+        body,
+        status: res.status,
+        statusText: res.statusText,
+        time: Date.now() - t0,
       });
     } catch (err) {
       const axiosErr = err as AxiosError;
